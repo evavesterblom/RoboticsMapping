@@ -98,6 +98,9 @@ class MotionController:
         ### get parameters ###
         # self.waypoints = rospy.get_param(...)
         # self.distance_margin = rospy.get_param(...)
+        self.distance_margin = rospy.get_param("/controller_waypoints/mission/distance_margin")
+        self.waypoints = rospy.get_param("/controller_waypoints/mission/waypoints")
+        self.wp_count = len(self.waypoints)
 
         ### initialization of class variables ###
         self.wpIndex = 0    # counter for visited waypoints
