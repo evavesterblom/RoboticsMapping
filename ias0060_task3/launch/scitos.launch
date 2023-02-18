@@ -31,6 +31,9 @@
     <rosparam command="load"
         file="$(find ias0060_task3)/data/config/diffdrive.yaml"
         ns="controller_diffdrive" />
+    <rosparam command="load"
+        file="$(find ias0060_task3)/data/config/mission.yaml"
+        ns="controller_waypoints" />
 
     <!-- Spawn model -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
@@ -40,5 +43,8 @@
     <node name="controller_spawner" pkg="controller_manager" type="spawner"
         args="controller_joints
           controller_diffdrive" />
+
+    <!-- Launch rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find ias0060_task3)/config/rviz/scitos.rviz'" />
 
 </launch>
