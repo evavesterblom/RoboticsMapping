@@ -45,6 +45,9 @@
           controller_diffdrive" />
 
     <!-- Launch rviz -->
-    <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find ias0060_task3)/config/rviz/scitos.rviz'" />
+    <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find ias0060_task3)/data/config/rviz/scitos.rviz'" />
+
+    <!-- Launch simple control -->
+    <node pkg="ias0060_task3" name="simple_control" type="simple_control.py" output="screen"/>
 
 </launch>

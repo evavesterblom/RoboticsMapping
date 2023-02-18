@@ -41,14 +41,23 @@ class PIDController:
         ### timing ###
         self.dt = dt
 
-        ### get controller gains as (2x1) vectors ###
-        # self.Kp = np.array(rospy.get_param(...))
-        # self.Ki = np.array(rospy.get_param(...))
-        # self.Kd = np.array(rospy.get_param(...))
+        ### get controller gains as vectors ###
+        self.Kd = rospy.get_param("/controller_waypoints/controller/Kd")
+        self.Kp = rospy.get_param("/controller_waypoints/controller/Kp")
+        self.Ki = rospy.get_param("/controller_waypoints/controller/Ki")
+        rospy.loginfo("-----------------------------------------------------")
+        rospy.loginfo("Controller parameters:")
+        rospy.loginfo("  Proportional gains: %.2f, %.2f",self.Kp[0],self.Kp[1])
+        rospy.loginfo("  Integral gains: %.2f, %.2f",self.Ki[0],self.Ki[1])
+        rospy.loginfo("  Derivative gains: %.2f, %.2f",self.Kd[0],self.Kd[1])
+        rospy.loginfo("-----------------------------------------------------")
 
         ### auxilary variables ###
         self.last_error = np.zeros(2)
         self.int_error = np.zeros(2)
+
+
+
 
     def control(self, error):
         """
@@ -84,11 +93,11 @@ class MotionController:
 
         ### define subscribers ###
         # self.odom_sub = rospy.Subscriber(...)
+        self.odom_sub = rospy.Subscriber('/controller_diffdrive/odom', Odometry, self.onOdom)
 
         ### define publishers ###
         # self.cmd_vel_pub = rospy.Publisher(...)
-        self.waypoints_pub = rospy.Publisher(
-            "/mission_control/waypoints", MarkerArray, queue_size=10)
+        self.waypoints_pub = rospy.Publisher("/mission_control/waypoints", MarkerArray, queue_size=10)
 
         ### messages to be handled ###
         self.odom_msg = None
@@ -96,11 +105,19 @@ class MotionController:
         self.twist_msg = Twist()
 
         ### get parameters ###
-        # self.waypoints = rospy.get_param(...)
-        # self.distance_margin = rospy.get_param(...)
         self.distance_margin = rospy.get_param("/controller_waypoints/mission/distance_margin")
         self.waypoints = rospy.get_param("/controller_waypoints/mission/waypoints")
         self.wp_count = len(self.waypoints)
+        rospy.loginfo("-----------------------------------------------------")
+        rospy.loginfo(" Mission parameters:")
+        rospy.loginfo("  Distance margin: %.2f", self.distance_margin)
+        rospy.loginfo("  Waypoints (#: x|y):")
+        wp = 1
+        for waypoint in self.waypoints:
+            rospy.loginfo("   %d: %.1f|%.1f", wp, waypoint[0], waypoint[1])
+            wp += 1
+        rospy.loginfo("-----------------------------------------------------")
+
 
         ### initialization of class variables ###
         self.wpIndex = 0    # counter for visited waypoints
@@ -153,7 +170,8 @@ class MotionController:
                     self.done_tracking = True
 
         if not self.done_tracking:
-            pass
+            self.publish_waypoints()
+            rospy.loginfo("Markerarray published")
             #TODO: Your code here
 
             ### calculate error ###
@@ -194,8 +212,8 @@ class MotionController:
             return False
 
         # TODO: calculate Euclidian (2D) distance to current waypoint
-        if distance < self.distance_margin:
-            return True
+        #if distance < self.distance_margin:
+        #    return True
         return False
 
     def publish_vel_cmd(self):
