@@ -28,7 +28,7 @@ import tf_conversions
 
 
 ################### TODO - teen edasi, aga juba tootab
-############# enne kui liikuma hakkab keerab ennast oigesse suunda
+############# enne kui liikuma hakkab keerab ennast oigesse suunda (yle vaiksema nurga)
 ############# et ei jookseks kokku kui wp on otsas
 ############# testida Kp, Ki ja Kd
 ############# kontrollida kas pid sai oigesti implementeeritud
