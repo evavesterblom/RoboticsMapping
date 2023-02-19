@@ -196,7 +196,7 @@ include_directories(
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 catkin_install_python(PROGRAMS
-  scripts/simple_control.py
+  scripts/simple_control_v1.py scripts/simple_control_v2.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
