@@ -22,6 +22,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Float64
 from tf.transformations import euler_from_quaternion
+import tf_conversions
 from visualization_msgs.msg import MarkerArray, Marker
 
 
@@ -54,7 +55,7 @@ class PIDController:
         self.last_error = np.zeros(2)
         self.int_error = np.zeros(2)
 
-    def control(self, error):
+    def control(self, error, error_i, error_d):
         """
         control update of the controller class
         @param: self
@@ -62,6 +63,8 @@ class PIDController:
         @result: cmd - (2x1) vector of controller commands
        
                   error * kP + totalError * kI + derivative * kD
+                  https://www.vexforum.com/t/what-is-a-pid-controller/73678
+
         command = Kp e + Ki e_i + Kd e_dot
         e       = Vector2(distance err          , angle err)
         e_i     = Vector2(absement              , angle absement) I - running sum of previous errors
@@ -123,6 +126,9 @@ class MotionController:
         while self.startTime == 0:
             self.startTime = rospy.Time.now().to_sec()
         self.time = rospy.Time.now().to_sec()
+
+        self.position = None
+        self.heading = None
 
     def run(self):
         """
@@ -229,11 +235,35 @@ class MotionController:
         @result: global variable pose_2D containing the planar
                  coordinates robot_x, robot_y and the yaw angle theta
         """
-        # make odometry message globally available for run() condition
+        prev_time = self.time
+        current_time = rospy.Time.now().to_sec()
+        delta_time = current_time - prev_time
+        
         self.odom_msg = data
 
-        # TODO: Your code here
-        # make 2D pose globally available as np.array
+        prev_position = self.position
+        prev_heading = self.heading
+        
+        self.position = self.odom_msg.pose.pose.position
+        q = self.position.orientation
+        _, _, self.heading = tf_conversions.transformations.euler_from_quaternion([q.x,q.y,q.z,q.w])
+        
+        curr_position = self.position
+        curr_heading = self.heading
+
+        #P error X - distance error
+        goal = self.waypoints[0]
+        delta_x = (goal[0] - curr_position.x)
+        delta_y = (goal[1] - curr_position.y)
+        self.delta_distance = math.sqrt( pow(delta_x, 2) + pow(delta_y, 2) )
+
+        #P error Y - angle error
+        self.delta_angle = math.atan2(delta_y, delta_x) -  curr_heading
+
+        #I error X - absement - running sum of previous errors
+
+
+
 
     def publish_waypoints(self):
         """
