@@ -55,7 +55,7 @@ class PIDController:
         self.last_error = np.zeros(2)
         self.int_error = np.zeros(2)
 
-    def control(self, error, error_i, error_d):
+    def control(self, error_p, error_i, error_d):
         """
         control update of the controller class
         @param: self
@@ -76,6 +76,11 @@ class PIDController:
         # cmd = ...
 
         # return cmd
+
+        e =     [self.Kp[0] * error_p[0]    , self.Kp[1] * error_p[1]]
+        e_i =   [self.Ki[0] * error_i[0]    , self.Ki[1] * error_i[1]]
+        e_d =   [self.Kd[0] * error_d[0]    , self.Kd[1] * error_d[0]]
+        return  [e[0] + e_i[0] + e_d[0]     , e[1] + e_i[1] + e_d[1]] 
 
 
 class MotionController:
@@ -179,9 +184,14 @@ class MotionController:
             self.publish_waypoints()
             #TODO: Your code here
 
-            ### calculate error ###
+            ### calculate error ### done in odom
 
             ### call controller class to get controller commands ###
+            self.vel_cmd = self.pid.control(error=[self.delta_distance, self.delta_angle], 
+                                            error_i=[self.total_distance_absement, self.total_angle_absement], 
+                                            error_d=[self.delta_lin_velocity, self.delta_ang_velocity])
+            self.publish_vel_cmd()
+            self.publish_waypoints()
 
             ### publish cmd_vel (and marker array) ###
 
@@ -227,11 +237,10 @@ class MotionController:
         @param: self
         @result: publish message
         """
-        self.twist_msg.linear = Vector3(1, 0, 0)
-        self.twist_msg.angular = Vector3(0, 0, 1)
-        self.twist_msg_term += 1
+        self.twist_msg.linear = Vector3(self.vel_cmd[0], 0, 0) #here self.vel_cmd[0]
+        self.twist_msg.angular = Vector3(0, 0, self.vel_cmd[1]) #here self.vel_cmd[1]
         self.publish_vel_cmd.publish(self.twist_msg)
-        self.time = rospy.Time.now().to_sec()
+        #self.time = rospy.Time.now().to_sec() #kas on vaja?
 
 
 
