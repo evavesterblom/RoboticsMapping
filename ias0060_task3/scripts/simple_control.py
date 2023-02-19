@@ -19,7 +19,7 @@ import math
 import rospy
 import numpy as np
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Float64
 from tf.transformations import euler_from_quaternion
 from visualization_msgs.msg import MarkerArray, Marker
@@ -38,10 +38,8 @@ class PIDController:
         @result: get controller gains from parameter server and
                  initialize class variables
         """
-        ### timing ###
         self.dt = dt
 
-        ### get controller gains as vectors ###
         self.Kd = rospy.get_param("/controller_waypoints/controller/Kd")
         self.Kp = rospy.get_param("/controller_waypoints/controller/Kp")
         self.Ki = rospy.get_param("/controller_waypoints/controller/Ki")
@@ -55,9 +53,6 @@ class PIDController:
         ### auxilary variables ###
         self.last_error = np.zeros(2)
         self.int_error = np.zeros(2)
-
-
-
 
     def control(self, error):
         """
@@ -87,28 +82,22 @@ class MotionController:
                  file using the launch file), to initialize the
                  controller, and to set up publishers and subscribers
         """
-        ### timing ###
         self.dt = 1.0 / rate
         self.rate = rospy.Rate(rate)
 
-        ### define subscribers ###
-        # self.odom_sub = rospy.Subscriber(...)
-        self.odom_sub = rospy.Subscriber('/controller_diffdrive/odom', Odometry, self.onOdom)
-
-        ### define publishers ###
-        # self.cmd_vel_pub = rospy.Publisher(...)
+        self.odom_sub = rospy.Subscriber("/controller_diffdrive/odom", Odometry, self.onOdom)
+        self.cmd_vel_pub = rospy.Publisher("/controller_diffdrive/cmd_vel", Twist, self.twist_msg)
         self.waypoints_pub = rospy.Publisher("/mission_control/waypoints", MarkerArray, queue_size=10)
 
-        ### messages to be handled ###
         self.odom_msg = None
         self.marker_array_msg = MarkerArray()
         self.twist_msg = Twist()
+        self.twist_msg_term = 0
+        self.vel_cmd = None #[linear, angular]
 
-        ### get parameters ###
         self.distance_margin = rospy.get_param("/controller_waypoints/mission/distance_margin")
         self.waypoints = rospy.get_param("/controller_waypoints/mission/waypoints")
         self.wp_count = len(self.waypoints)
-        rospy.loginfo("-----------------------------------------------------")
         rospy.loginfo(" Mission parameters:")
         rospy.loginfo("  Distance margin: %.2f", self.distance_margin)
         rospy.loginfo("  Waypoints (#: x|y):")
@@ -118,20 +107,15 @@ class MotionController:
             wp += 1
         rospy.loginfo("-----------------------------------------------------")
 
-
-        ### initialization of class variables ###
         self.wpIndex = 0    # counter for visited waypoints
         self.done_tracking = False
 
-        ### initialize controller class ###
         self.pid = PIDController(self.dt)
 
-        # TODO: initialize additional class variables if necessary
-
-        # Registering start time of this node for performance tracking
-        self.startTime = 0
+        self.startTime = 0  # Registering start time of this node for performance tracking
         while self.startTime == 0:
             self.startTime = rospy.Time.now().to_sec()
+        self.time = rospy.Time.now().to_sec()
 
     def run(self):
         """
@@ -171,7 +155,6 @@ class MotionController:
 
         if not self.done_tracking:
             self.publish_waypoints()
-            rospy.loginfo("Markerarray published")
             #TODO: Your code here
 
             ### calculate error ###
@@ -222,7 +205,13 @@ class MotionController:
         @param: self
         @result: publish message
         """
-        # TODO: Your code here
+        self.twist_msg.linear = Vector3(1, 0, 0)
+        self.twist_msg.angular = Vector3(0, 0, 1)
+        self.twist_msg_term += 1
+        self.publish_vel_cmd.publish(self.twist_msg)
+        self.time = rospy.Time.now().to_sec()
+
+
 
     def onOdom(self, data):
         """
@@ -269,14 +258,8 @@ class MotionController:
             self.marker_array.markers.append(marker)
         self.waypoints_pub.publish(self.marker_array)
 
-
-# entry point of the executable calling the main node function of the
-# node only if this .py file is executed directly, not imported
 if __name__ == '__main__':
-    # initialize node and name it
     rospy.init_node("MotionController")
-    # go to class that provides all the functionality
-    # and check for errors
     try:
         controller = MotionController(10)
         controller.run()
