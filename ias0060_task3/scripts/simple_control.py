@@ -130,6 +130,15 @@ class MotionController:
         self.position = None
         self.heading = None
 
+        #errors
+        self.delta_distance = 0 #PX
+        self.delta_angle = 0 #PY
+        self.total_distance_absement = 0 #IX
+        self.total_angle_absement = 0 #IY
+        self.delta_lin_velocity = 0 #DX
+        self.delta_ang_velocity = 0 #DY
+
+
     def run(self):
         """
         Main loop of the class
@@ -260,7 +269,22 @@ class MotionController:
         #P error Y - angle error
         self.delta_angle = math.atan2(delta_y, delta_x) -  curr_heading
 
-        #I error X - absement - running sum of previous errors
+        #I error X - absement distance - running sum of previous errors
+        self.total_distance_absement += self.delta_distance * delta_time
+
+        #I error Y - absement angle - running sum of previous errors
+        self.total_angle_absement += self.delta_angle * delta_time
+
+        #D error X - change linear velocity in dt
+        delta_x_previous = (curr_position.x - prev_position.x)
+        delta_y_previous = (curr_position.y - prev_position.y)
+        delta_distance_previous = math.sqrt( pow(delta_x_previous, 2) + pow(delta_y_previous, 2) )
+        if delta_time != 0:
+            self.delta_lin_velocity = delta_distance_previous / delta_time
+
+        #D error Y - change angular velocity in dt
+        if delta_time != 0:
+            self.delta_ang_velocity = (curr_heading - prev_heading) / delta_time
 
 
 
