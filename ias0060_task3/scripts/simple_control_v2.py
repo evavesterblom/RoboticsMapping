@@ -90,7 +90,7 @@ class MotionController:
         self.rate = rospy.Rate(rate)
         
         self.odom_sub = rospy.Subscriber("/controller_diffdrive/odom", Odometry, self.onOdom)
-        self.cmd_vel_pub = rospy.Publisher("/controller_diffdrive/cmd_vel", Twist, self.twist_msg)
+        self.cmd_vel_pub = rospy.Publisher("/controller_diffdrive/cmd_vel", Twist, queue_size=10)
         self.waypoints_pub = rospy.Publisher("/mission_control/waypoints", MarkerArray, queue_size=10)
 
         self.odom_msg = None
@@ -158,7 +158,7 @@ class MotionController:
                     self.done_tracking = True
 
         if not self.done_tracking:
-            pass
+            #pass
             #TODO: Your code here
 
             ### calculate error ###
@@ -166,6 +166,8 @@ class MotionController:
             ### call controller class to get controller commands ###
 
             ### publish cmd_vel (and marker array) ###
+            self.publish_vel_cmd()
+            self.publish_waypoints()
 
     def setNextWaypoint(self):
         """
@@ -199,8 +201,8 @@ class MotionController:
             return False
 
         # TODO: calculate Euclidian (2D) distance to current waypoint
-        if distance < self.distance_margin:
-            return True
+        #if distance < self.distance_margin:
+            #return True
         return False
 
     def publish_vel_cmd(self):
@@ -210,9 +212,9 @@ class MotionController:
         @result: publish message
         """
         # TODO: Your code here
-        self.twist_msg.linear = Vector3(self.vel_cmd[0], 0, 0) #here self.vel_cmd[0]
-        self.twist_msg.angular = Vector3(0, 0, self.vel_cmd[1]) #here self.vel_cmd[1]
-        self.publish_vel_cmd.publish(self.twist_msg)
+        self.twist_msg.linear = Vector3(0, 0, 0)    # Vector3(self.vel_cmd[0], 0, 0) #here self.vel_cmd[0]
+        self.twist_msg.angular = Vector3(0, 0, 0.4) # Vector3(0, 0, self.vel_cmd[1]) #here self.vel_cmd[1]
+        self.cmd_vel_pub.publish(self.twist_msg)
 
     def onOdom(self, data):
         """
@@ -221,15 +223,11 @@ class MotionController:
         @result: global variable pose_2D containing the planar
                  coordinates robot_x, robot_y and the yaw angle theta
         """
-        # make odometry message globally available for run() condition
         self.odom_msg = data
         self.odom_msg_time = rospy.Time.now().to_sec()
         self.position = self.odom_msg.pose.pose.position
-        q = self.position.orientation
+        q = self.odom_msg.pose.pose.orientation
         _, _, self.heading = tf_conversions.transformations.euler_from_quaternion([q.x,q.y,q.z,q.w])
-
-        # TODO: Your code here
-        # make 2D pose globally available as np.array
 
     def publish_waypoints(self):
         """
