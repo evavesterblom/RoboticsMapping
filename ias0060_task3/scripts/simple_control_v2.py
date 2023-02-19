@@ -26,6 +26,13 @@ from visualization_msgs.msg import MarkerArray, Marker
 import tf_conversions
 
 
+
+################### TODO - teen edasi, aga juba tootab
+############# enne kui liikuma hakkab keerab ennast oigesse suunda
+############# et ei jookseks kokku kui wp on otsas
+############# testida Kp, Ki ja Kd
+############# kontrollida kas pid sai oigesti implementeeritud
+
 class PIDController:
     """
     class for PID controller to calculated desired controller output
@@ -55,22 +62,38 @@ class PIDController:
 
 
         ### auxilary variables ###
-        self.last_error = np.zeros(2)
-        self.int_error = np.zeros(2)
+        self.last_error = [0,0]
+        self.int_error = [0,0]
 
-    def control(self, error):
+    def control(self, error, dt):
         """
         control update of the controller class
         @param: self
         @param: e1 - (2x1) error vector for linear and angular position
         @result: cmd - (2x1) vector of controller commands
         """
-        # Todo: Your code here
-        # ...
-        # cmd = ...
+        current_error = error
+        int_error_lin = (current_error[0] - self.last_error[0]) * dt
+        int_error_ang = (current_error[1] - self.last_error[1]) * dt
+        self.int_error = [self.int_error[0] + int_error_lin, self.int_error[0] + int_error_ang]
+        error_lin_d = 0
+        error_ang_d = 0
+        if dt != 0:
+            error_lin_d = error[0]/dt
+            error_ang_d = error[1]/dt
 
-        # return cmd
 
+        #command = Kp e_p + Ki e_i + Kd e_d
+        #e_p distance, angle error
+        #e_i running error distance, angle in dt
+        #e_d error change in dt
+
+        e_p =   [self.Kp[0] * error[0],               self.Kp[1] *  error[1]]
+        e_i =   [self.Ki[0] * self.int_error[0],      self.Ki[1] *  self.int_error[1]]
+        e_d =   [self.Kd[0] * error_lin_d,            self.Kd[1] *  error_ang_d]
+
+        self.last_error = error
+        return  [e_p[0] + e_i[0] + e_d[0], e_p[1] + e_i[1] + e_d[1]] 
 
 class MotionController:
     """
@@ -100,6 +123,10 @@ class MotionController:
         self.marker_array_msg = MarkerArray()
         self.twist_msg = Twist()
         self.vel_cmd = None # [linear, angular]
+
+        self.delta_distance = 0.0
+        self.delta_angle = 0.0
+        self.error = [0,0]
 
         self.distance_margin = rospy.get_param("/controller_waypoints/mission/distance_margin")
         self.waypoints = rospy.get_param("/controller_waypoints/mission/waypoints")
@@ -158,12 +185,20 @@ class MotionController:
                     self.done_tracking = True
 
         if not self.done_tracking:
-            #pass
-            #TODO: Your code here
-
             ### calculate error ###
+            curr_position = self.position
+            curr_heading = self.heading
+            goal = self.waypoints[0]
+            delta_x = (goal[0] - curr_position.x)
+            delta_y = (goal[1] - curr_position.y)
+            self.delta_distance = math.sqrt(pow(delta_x, 2) + pow(delta_y, 2)) #P error X - distance error
+            self.delta_angle = math.atan2(delta_y, delta_x) - curr_heading #P error Y - angle error
+            self.error = [self.delta_distance, self.delta_angle]
 
             ### call controller class to get controller commands ###
+            dt = rospy.Time.now().to_sec() - self.odom_msg_time
+            self.vel_cmd = self.pid.control(self.error, dt)
+            
 
             ### publish cmd_vel (and marker array) ###
             self.publish_vel_cmd()
@@ -201,8 +236,8 @@ class MotionController:
             return False
 
         # TODO: calculate Euclidian (2D) distance to current waypoint
-        #if distance < self.distance_margin:
-            #return True
+        if self.delta_distance < self.distance_margin:
+            return True
         return False
 
     def publish_vel_cmd(self):
@@ -212,8 +247,8 @@ class MotionController:
         @result: publish message
         """
         # TODO: Your code here
-        self.twist_msg.linear = Vector3(0, 0, 0)    # Vector3(self.vel_cmd[0], 0, 0) #here self.vel_cmd[0]
-        self.twist_msg.angular = Vector3(0, 0, 0.4) # Vector3(0, 0, self.vel_cmd[1]) #here self.vel_cmd[1]
+        self.twist_msg.linear =Vector3(self.vel_cmd[0], 0, 0)  #Vector3(0, 0, 0)    # Vector3(self.vel_cmd[0], 0, 0) #here self.vel_cmd[0]
+        self.twist_msg.angular = Vector3(0, 0, self.vel_cmd[1])#Vector3(0, 0, 0.4) # Vector3(0, 0, self.vel_cmd[1]) #here self.vel_cmd[1]
         self.cmd_vel_pub.publish(self.twist_msg)
 
     def onOdom(self, data):
