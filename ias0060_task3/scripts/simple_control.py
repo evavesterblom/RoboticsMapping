@@ -60,6 +60,13 @@ class PIDController:
         @param: self
         @param: e1 - (2x1) error vector for linear and angular position
         @result: cmd - (2x1) vector of controller commands
+       
+                  error * kP + totalError * kI + derivative * kD
+        command = Kp e + Ki e_i + Kd e_dot
+        e       = Vector2(distance err          , angle err)
+        e_i     = Vector2(absement              , angle absement) I - running sum of previous errors
+        e_dot   = Vector2(velocity change in dt , angle change in dt)
+
         """
         # Todo: Your code here
         # ...
