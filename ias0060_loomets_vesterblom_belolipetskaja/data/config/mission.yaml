@@ -7,6 +7,6 @@ mission:
 
 controller:
   # controller gains
-  Kp: [0.65, 0.38]  # proportional gains [linear, angular]
+  Kp: [0.65, 2.0]  # proportional gains [linear, angular]
   Kd: [0.037, 0.025]  # derivative gains [linear, angular]
   Ki: [0.01, 0.01]  # integral gains [linear, angular]
