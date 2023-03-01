@@ -93,12 +93,7 @@ class PIDController:
         e_d =   [self.Kd[0] * error_lin_d,            self.Kd[1] *  error_ang_d]
 
         self.last_error = error
-        return  [e_p[0] + e_i[0] + e_d[0], e_p[1] + e_i[1] + e_d[1]]
-
-    def zero(self):
-        print("ZERO")
-        self.int_error = [0,0]
-        self.last_error = [0,0]
+        return  [e_p[0] + e_i[0] + e_d[0], e_p[1] + e_i[1] + e_d[1]] 
 
 class MotionController:
     """
@@ -116,13 +111,13 @@ class MotionController:
         """
         self.dt = 1.0 / rate
         self.rate = rospy.Rate(rate)
-        self.prev_time = rospy.Time.now().to_sec()
         
         self.odom_sub = rospy.Subscriber("/controller_diffdrive/odom", Odometry, self.onOdom)
         self.cmd_vel_pub = rospy.Publisher("/controller_diffdrive/cmd_vel", Twist, queue_size=10)
         self.waypoints_pub = rospy.Publisher("/mission_control/waypoints", MarkerArray, queue_size=10)
 
         self.odom_msg = None
+        self.odom_msg_time = None
         self.position = None # actual robot position
         self.heading = None # actual robot heading
         self.marker_array_msg = MarkerArray()
@@ -201,11 +196,8 @@ class MotionController:
             self.error = [self.delta_distance, self.delta_angle]
 
             ### call controller class to get controller commands ###
-
-            self.vel_cmd = self.pid.control(self.error, rospy.Time.now().to_sec() - self.prev_time)
-            self.prev_time = rospy.Time.now().to_sec()
-
-            print(f"Command: {self.vel_cmd}")
+            dt = rospy.Time.now().to_sec() - self.odom_msg_time
+            self.vel_cmd = self.pid.control(self.error, dt)
             
 
             ### publish cmd_vel (and marker array) ###
@@ -232,7 +224,6 @@ class MotionController:
         rospy.loginfo(f"                Next waypoint                 ")
         rospy.loginfo(f"----------------------------------------------")
 
-        self.pid.zero()
         return True
 
     def isWaypointReached(self):
@@ -268,6 +259,7 @@ class MotionController:
                  coordinates robot_x, robot_y and the yaw angle theta
         """
         self.odom_msg = data
+        self.odom_msg_time = rospy.Time.now().to_sec()
         self.position = self.odom_msg.pose.pose.position
         q = self.odom_msg.pose.pose.orientation
         _, _, self.heading = tf_conversions.transformations.euler_from_quaternion([q.x,q.y,q.z,q.w])
