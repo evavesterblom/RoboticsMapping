@@ -64,16 +64,11 @@ if __name__ == '__main__':
     points = [(10, 10), (55, 70), (-5, 20), (120, 80)]
     for point in points:
         grid_coords = world_to_grid(point[0], point[1], origin_x, origin_y, width, height, resolution)
-        world_coords = grid_to_world(point[0], point[1], origin_x, origin_y, width, height, resolution)
         if grid_coords:
             print(f"World to Grid: Point {point} is in grid cell {grid_coords}")
         else:
             print(f"World to Grid: Point {point} is outside the grid")
-        if world_coords:
-            print(f"Grid to World: Point {point} is in grid cell {world_coords}")
-        else:
-            print(f"Grid to World: Point {point} is outside the grid")
-            print(f"Point {point} is outside the grid")
+
             
     test_grid_to_world()
 
