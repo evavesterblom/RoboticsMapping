@@ -14,24 +14,11 @@ def world_to_grid(x, y, origin_x, origin_y, width, height, resolution):
 
 def grid_to_world(gx, gy, origin_x, origin_y, width, height, resolution):
     return (gx * resolution + origin_x, gy * resolution + origin_y)
+    #todo kontrollida kas gx gy on kaardilt valjas
+    #kontrollida punkti keskele lisamist 
 
 def grid_to_world_2(gx,gy,origin_x,origin_y,width,height,resolution): #TODO!!!!! NOT SURE IT IS CORRECT ATM!!!!!!
-    x_boundary = origin_x + width
-    y_boundary = origin_y + height
-    if (gx == x_boundary and gy == y_boundary):
-        return (x_boundary, y_boundary)
-    elif (gx > origin_x and gy > origin_y and gx <= x_boundary and gy <= y_boundary):
-        #here if point is out of grid, then return last grid coordinate
-        x_center = gx + (resolution / 2)
-        y_center = gy + (resolution / 2)
-        if (x_center > x_boundary):
-            x_center = x_boundary
-        if (y_center > y_boundary):
-            y_center = y_boundary
-        return (y_center, y_center)
-    
-    else:
-        return None
+    return None
 
 def print_world_info(origin_x, origin_y, width, height, resolution):
     print(f"Grid size: {int(width / resolution)}x{int(height / resolution)} cells, each {resolution}x{resolution} meters")
