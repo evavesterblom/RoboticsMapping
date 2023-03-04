@@ -10,8 +10,7 @@ def world_to_grid(x, y, origin_x, origin_y, width, height, resolution):
         return (grid_x, grid_y)
     else:
         return None
-
-
+    
 def grid_to_world(gx, gy, origin_x, origin_y, width, height, resolution):
     x = gx * resolution + origin_x
     y = gy * resolution + origin_y
@@ -23,28 +22,14 @@ def print_world_info(origin_x, origin_y, width, height, resolution):
     print(f"Grid origin: ({origin_x}, {origin_y})")
     print(f"Grid boundaries: ({origin_x}, {origin_y}) - ({origin_x + width}, {origin_y + height})")
 
-def test_grid_to_world():
-    origin_x = 0
-    origin_y = 0
-    width = 100
-    height = 100
-    resolution = 10
-    print_world_info(origin_x, origin_y, width, height, resolution)
-    # Test the function with some example points
+def test_grid_to_world(origin_x, origin_y, width, height, resolution):
     points = [(1, 1), (5, 7), (-5, 0), (10, 15), (10, 10)]
     for point in points:
         world_cords = grid_to_world(point[0], point[1], origin_x, origin_y, width, height, resolution)
         print(f"Point {point} is in world coords {world_cords}")
 
-if __name__ == '__main__':
-    origin_x = 0
-    origin_y = 0
-    width = 100 
-    height = 100
-    resolution = 10
-    print_world_info(origin_x, origin_y, width, height, resolution)
-    # Test the function with some example points
-    points = [(10, 10), (55, 70), (-5, 20), (120, 80)]
+def test_world_to_grid(origin_x, origin_y, width, height, resolution):
+    points = [(-0.9, 1.0),(10.8, 10.0), (55.0, 70.0), (-5.0, 20.6), (120.0, 80.8)]
     for point in points:
         grid_coords = world_to_grid(point[0], point[1], origin_x, origin_y, width, height, resolution)
         if grid_coords:
@@ -52,8 +37,17 @@ if __name__ == '__main__':
         else:
             print(f"World to Grid: Point {point} is outside the grid")
 
-            
-    test_grid_to_world()
+if __name__ == '__main__':
+    origin_x = -1
+    origin_y = -1
+    width = 100 
+    height = 100
+    resolution = 10
+    print_world_info(origin_x, origin_y, width, height, resolution)
+    print(f" - - - ")
+    test_world_to_grid(origin_x, origin_y, width, height, resolution) 
+    print(f" - - - ")     
+    test_grid_to_world(origin_x, origin_y, width, height, resolution)
 
 
     
