@@ -13,8 +13,10 @@ def world_to_grid(x, y, origin_x, origin_y, width, height, resolution):
 
 
 def grid_to_world(gx, gy, origin_x, origin_y, width, height, resolution):
-    return (gx * resolution + origin_x, gy * resolution + origin_y)
-    #kontrollida punkti keskele lisamist 
+    x = gx * resolution + origin_x
+    y = gy * resolution + origin_y
+    offset = resolution/2
+    return (x + offset, y + offset)
 
 def print_world_info(origin_x, origin_y, width, height, resolution):
     print(f"Grid size: {int(width / resolution)}x{int(height / resolution)} cells, each {resolution}x{resolution} meters")
