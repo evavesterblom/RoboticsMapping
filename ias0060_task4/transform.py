@@ -1,15 +1,26 @@
+import numpy as np 
+
 def world_to_grid(x, y, origin_x, origin_y, width, height, resolution):
     # grid where x,y falls
     grid_x = int((x - origin_x) / resolution)
     grid_y = int((y - origin_y) / resolution)
 
     # check boundaries
-    x_boundary = int(width / resolution)
-    y_boundary = int(height / resolution)
+    x_boundary = origin_x + int(width / resolution)
+    y_boundary = origin_y + int(height / resolution)
     if (grid_x <= x_boundary and grid_y <= y_boundary and x >= origin_x and y >= origin_y):
         return (grid_x, grid_y)
     else:
         return None
+    
+def world_to_grid_2(x, y, origin_x, origin_y, width, height, resolution):
+    # Compute the grid cell coordinates
+    if x > (width + origin_x) or y > (height + origin_y) or x < origin_x or y < origin_y:
+        return None
+    else:
+        grid_x = int((x - origin_x) / resolution)
+        grid_y = int((y - origin_y) / resolution)
+    return grid_x, grid_y
     
 def grid_to_world(gx, gy, origin_x, origin_y, width, height, resolution):
     x = gx * resolution + origin_x
@@ -37,6 +48,16 @@ def test_world_to_grid(origin_x, origin_y, width, height, resolution):
         else:
             print(f"World to Grid: Point {point} is outside the grid")
 
+def test_assert(origin_x, origin_y, width, height, resolution):
+    for x in np.arange(-10.5, 100.5, 0.5):
+        for y in np.arange(-10.5, 100.5, 0.5):
+             #print('%s * %s' % (x, y))
+             e = world_to_grid(x, y, origin_x, origin_y, width, height, resolution)
+             d = world_to_grid_2(x, y, origin_x, origin_y, width, height, resolution)
+             print('XY = (%s, %s) -> %s * %s' % (x, y, e, d))
+             assert(e == d, (x, y, e, d)) 
+
+
 if __name__ == '__main__':
     origin_x = -1
     origin_y = -1
@@ -48,6 +69,8 @@ if __name__ == '__main__':
     test_world_to_grid(origin_x, origin_y, width, height, resolution) 
     print(f" - - - ")     
     test_grid_to_world(origin_x, origin_y, width, height, resolution)
+    print(f" - - -  - - - - - - ")  
+    test_assert(origin_x, origin_y, width, height, resolution)
 
 
     
