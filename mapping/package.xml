@@ -20,19 +20,32 @@
   <build_depend>rospy</build_depend>
   <build_depend>sensor_msgs/LaserScan</build_depend>
   <build_depend>nav_msgs/Odometry</build_depend>
+  <build_depend>mapping_msgs/map_msg</build_depend>7
+  <build_depend>visualization_msgs/Marker</build_depend>
+  <build_depend>visualization_msgs/MarkerArray</build_depend>
+  <build_depend>utils</build_depend>
+<!--  <build_depend>message_generation</build_depend>-->
+
   <build_export_depend>nav_msgs/OccupancyGrid</build_export_depend>
   <build_export_depend>sensor_msgs/LaserScan</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>nav_msgs/Odometry</build_export_depend>
+  <build_export_depend>mapping_msgs/map_msg</build_export_depend>
+  <build_export_depend>visualization_msgs/Marker</build_export_depend>
+  <build_export_depend>visualization_msgs/MarkerArray</build_export_depend>
+  <build_export_depend>utils</build_export_depend>
+<!--  <build_export_depend>message_runtime</build_export_depend>-->
+
   <exec_depend>nav_msgs/OccupancyGrid</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>sensor_msgs/LaserScan</exec_depend>
   <exec_depend>nav_msgs/Odometry</exec_depend>
-
-
-  <!-- The export tag contains other, unspecified, tags -->
+  <exec_depend>mapping_msgs/map_msg</exec_depend>
+  <exec_depend>visualization_msgs/Marker</exec_depend>
+  <exec_depend>visualization_msgs/MarkerArray</exec_depend>
+  <exec_depend>utils</exec_depend>
+<!--  <exec_depend>message_runtime</exec_depend>-->
   <export>
-    <!-- Other tools can request additional information be placed here -->
 
   </export>
 </package>

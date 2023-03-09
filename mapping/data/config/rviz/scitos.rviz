@@ -36,8 +36,16 @@ Visualization Manager:
   Displays:
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /mission_control/waypoints
+      Marker Topic: /lidar_points
       Name: MarkerArray
+      Namespaces:
+        {'lidar': true}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Map
+      Enabled: true
+      Marker Topic: /map
+      Name: Map
       Namespaces:
         {}
       Queue Size: 100

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>mapping_msgs</name>
+    <version>0.0.0</version>
+    <description>The mapping package</description>
+    <maintainer email="nevermore@todo.todo">nevermore</maintainer>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>geometry_msgs/Point</build_depend>
+    <build_depend>geometry_msgs/Pose2D</build_depend>
+    <build_depend>message_generation</build_depend>
+
+    <build_export_depend>message_runtime</build_export_depend>
+    <build_export_depend>geometry_msgs/Point</build_export_depend>
+    <build_export_depend>geometry_msgs/Pose2D</build_export_depend>
+
+    <exec_depend>message_runtime</exec_depend>
+    <exec_depend>geometry_msgs/Point</exec_depend>
+    <exec_depend>geometry_msgs/Pose2D</exec_depend>
+    <export>
+
+    </export>
+</package>
