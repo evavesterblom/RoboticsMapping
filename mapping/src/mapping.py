@@ -50,7 +50,7 @@ class Cell:
 
 
 def get_point_location(position, heading, angle, distance):
-    x = position[0] + distance * math.cos(heading + angle) + 0.24 #0.24 is lidar offset
+    x = position[0] + distance * math.cos(heading + angle) + 0.24 #lidar offset = (0.24, 0, 0.3)
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
 
@@ -83,7 +83,10 @@ class Mapper:
         local_heading = self.heading
         found_points = set()
         for i in range(len(data.ranges)):
-            x, y = get_point_location(local_position, local_heading, data.angle_min + i * data.angle_increment, data.ranges[i])
+            x, y = get_point_location(local_position, 
+                                      local_heading, 
+                                      data.angle_min + i * data.angle_increment, 
+                                      data.ranges[i])
             found_points.add((x, y))
         for x, y in found_points:
             self.lidar.markers.append(self.get_marker(x, y, (1, 0, 0, 1)))
