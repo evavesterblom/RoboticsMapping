@@ -49,7 +49,7 @@ class Cell:
         return self.buffer.get_average()
 
 
-def get_point_location(position, heading, angle, distance): #lidar offset = (0.24, 0, 0.3)
+def get_point_location(position, heading, angle, distance): #lidar (0.24, 0, 0.3)
     x = position[0] + distance * math.cos(heading + angle) + 0.24
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
@@ -77,12 +77,15 @@ class Mapper:
         self.lidar_publisher.publish(self.lidar)
         self.map_publisher.publish(self.get_map())
 
+    # lidars measurement set as occupied, others as non-occupied if measurement is valid
     def process_map(self, data):
         self.lidar = MarkerArray()
         local_position = self.position
         local_heading = self.heading
         found_points = set()
-        for i in range(len(data.ranges)): #process each lidar measurement
+        for i in range(len(data.ranges)):
+            if not(data.range_min < data.ranges[i] < data.range_max):
+                continue
             x, y = get_point_location(local_position, 
                                       local_heading, 
                                       data.angle_min + i * data.angle_increment, 
@@ -93,8 +96,8 @@ class Mapper:
             result = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
             if result is not None:
                 gx, gy = result
-                self.map[gx, gy].measure(1) #set lidar measurement as occupied cell
-                for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100): #take lidar measurement, divide by 100 x,y on this diagonal for marking empty
+                self.map[gx, gy].measure(1)
+                for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
                     map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
                     if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
                         self.map[map_point[0], map_point[1]].measure(0)
