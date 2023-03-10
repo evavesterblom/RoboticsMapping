@@ -15,16 +15,45 @@ import numpy as np
 from utils.transform import world_to_grid
 from utils.math import parametric_equation
 
+class RollingBuffer:
+    def __init__(self, size):
+        self.size = size
+        self.buffer = [0.5]
+        self.index = 0
+
+    def add(self, value):
+        if len(self.buffer) < self.size:
+            self.buffer.append(value)
+        else:
+            self.buffer[self.index] = value
+        self.index += 1
+        if self.index >= self.size:
+            self.index = 0
+
+    def get(self):
+        return self.buffer
+
+    def get_average(self):
+        return sum(self.buffer) / len(self.buffer)
+
 class Cell:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.hit_count = 1
-        self.value = 0
+        self.buffer = RollingBuffer(100)
 
     def measure(self, value):
-        self.hit_count += 1
-        self.value += value
+        self.buffer.add(value)
+
+    def get_value(self):
+        return self.buffer.get_average()
+
+
+def get_point_location(position, heading, angle, distance):
+    x = position[0] + distance * math.cos(heading + angle)
+    y = position[1] + distance * math.sin(heading + angle)
+    return x, y
+
 
 class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
@@ -48,19 +77,23 @@ class Mapper:
         self.lidar_publisher.publish(self.lidar)
         self.map_publisher.publish(self.get_map())
 
-    def process_map(self, info):
+    def process_map(self, data):
         self.lidar = MarkerArray()
-        local_odom = self.position
-        for i in range(len(info.ranges)):
-            x, y = self.get_point_location(local_odom, info.angle_min + i * info.angle_increment, info.ranges[i])
+        local_position = self.position
+        local_heading = self.heading
+        found_points = set()
+        for i in range(len(data.ranges)):
+            x, y = get_point_location(local_position, local_heading, data.angle_min + i * data.angle_increment, data.ranges[i])
+            found_points.add((x, y))
+        for x, y in found_points:
             self.lidar.markers.append(self.get_marker(x, y, (1, 0, 0, 1)))
             result = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
             if result is not None:
                 gx, gy = result
                 self.map[gx, gy].measure(1)
-                for point in parametric_equation((local_odom[0], local_odom[1]), (x, y), 100):
+                for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
                     map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
-                    if map_point is not None and map_point != (gx, gy):
+                    if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
                         self.map[map_point[0], map_point[1]].measure(0)
 
     def get_marker(self, x, y, color):
@@ -102,8 +135,7 @@ class Mapper:
         msg.info.origin.orientation.w = self.origin_orientation[3]
         msg.info.map_load_time = rospy.Time.now()
         for idx, value in np.ndenumerate(self.map):
-            msg.data.append(int(value.value / value.hit_count * 100))
-        # rospy.loginfo("Map published")
+            msg.data.append(int(value.get_value() * 100))
         return msg
 
     def position_callback(self, data):
@@ -113,14 +145,8 @@ class Mapper:
                                                                              data.pose.pose.orientation.z,
                                                                              data.pose.pose.orientation.w))[2]
 
-    def get_point_location(self, position, angle, distance):
-        x = position[0] + distance * math.cos(self.heading + angle)
-        y = position[1] + distance * math.sin(self.heading + angle)
-        return x, y
-
-
 if __name__ == '__main__':
     rospy.init_node('mapping')
-    mapper = Mapper(30, 30, 0.1, -15, -15)
+    mapper = Mapper(60, 60, 0.1, -30, -30)
     rospy.loginfo("Mapping node started")
     rospy.spin()
