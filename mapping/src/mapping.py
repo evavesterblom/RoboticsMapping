@@ -50,7 +50,7 @@ class Cell:
 
 
 def get_point_location(position, heading, angle, distance):
-    x = position[0] + distance * math.cos(heading + angle)
+    x = position[0] + distance * math.cos(heading + angle) + 0.24 #0.24 is lidar offset
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
 
