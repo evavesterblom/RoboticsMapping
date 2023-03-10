@@ -48,21 +48,18 @@ class Mapper:
         self.lidar_publisher.publish(self.lidar)
         self.map_publisher.publish(self.get_map())
 
-    def process_map(self, data):
+    def process_map(self, info):
         self.lidar = MarkerArray()
-        for i in range(len(data.ranges)):
-            x, y = self.get_point_location(data.angle_min + i * data.angle_increment, data.ranges[i])
+        local_odom = self.position
+        rospy.loginfo("First: %s", info.ranges[0])
+        for i in range(len(info.ranges)):
+            x, y = self.get_point_location(local_odom, info.angle_min + i * info.angle_increment, info.ranges[i])
             self.lidar.markers.append(self.get_marker(x, y, (1, 0, 0, 1)))
             result = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
-            # rospy.loginfo("x: %s, y: %s", x, y)
             if result is not None:
                 gx, gy = result
-                # rospy.loginfo("x: %s, y: %s", x, y)
-                # rospy.loginfo("gx: %s, gy: %s", gx, gy)
-                # rospy.loginfo("robot x: %s, y: %s", self.position[0], self.position[1])
                 self.map[gx, gy].measure(1)
                 for point in parametric_equation((self.position[0], self.position[1]), (x, y), 100):
-                    # rospy.loginfo("robot: %s, point: %s, end: %s", self.position, point, (x, y))
                     map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
                     if map_point is not None and map_point != (gx, gy):
                         self.map[map_point[0], map_point[1]].measure(0)
@@ -117,9 +114,9 @@ class Mapper:
                                                                              data.pose.pose.orientation.z,
                                                                              data.pose.pose.orientation.w))[2]
 
-    def get_point_location(self, angle, distance):
-        x = self.position[0] + distance * math.cos(self.heading + angle)
-        y = self.position[1] + distance * math.sin(self.heading + angle)
+    def get_point_location(self, position, angle, distance):
+        x = position[0] + distance * math.cos(self.heading + angle)
+        y = position[1] + distance * math.sin(self.heading + angle)
         return x, y
 
 
