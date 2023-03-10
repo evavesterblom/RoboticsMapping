@@ -30,7 +30,7 @@ class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
         self.position = (0, 0)
         self.heading = 0
-        self.laser_subscriber = rospy.Subscriber('/laser_scan', LaserScan, self.laser_callback)
+        self.laser_subscriber = rospy.Subscriber('/laser_scan', LaserScan, self.laser_callback, queue_size=1, buff_size=2**24)
         self.position_subscriber = rospy.Subscriber('/odom', Odometry, self.position_callback)
         self.map_publisher = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
         self.lidar_publisher = rospy.Publisher('/lidar_points', MarkerArray, queue_size=10)
@@ -51,7 +51,6 @@ class Mapper:
     def process_map(self, info):
         self.lidar = MarkerArray()
         local_odom = self.position
-        rospy.loginfo("First: %s", info.ranges[0])
         for i in range(len(info.ranges)):
             x, y = self.get_point_location(local_odom, info.angle_min + i * info.angle_increment, info.ranges[i])
             self.lidar.markers.append(self.get_marker(x, y, (1, 0, 0, 1)))
@@ -59,7 +58,7 @@ class Mapper:
             if result is not None:
                 gx, gy = result
                 self.map[gx, gy].measure(1)
-                for point in parametric_equation((self.position[0], self.position[1]), (x, y), 100):
+                for point in parametric_equation((local_odom[0], local_odom[1]), (x, y), 100):
                     map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
                     if map_point is not None and map_point != (gx, gy):
                         self.map[map_point[0], map_point[1]].measure(0)
