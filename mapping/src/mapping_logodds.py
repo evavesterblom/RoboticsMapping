@@ -19,44 +19,29 @@ class Cell:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.probability = 0.5
+        self.logit = 0.0
 
     def get_value(self):
-        return self.probability
+        return self.logit
     
     def set_value(self, value):
-        self.probability = value
+        self.logit = value
+    
+    def get_probability(self):
+        return 1/(1 + np.exp(-(self.logit)))
 
 def get_point_location(position, heading, angle, distance): #lidar (0.24, 0, 0.3)
     x = position[0] + distance * math.cos(heading + angle) + 0.24
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
 
-def calculate_probability_for_occupied_cell(prior):
-    p = prior/(1-prior)
-    logit = np.log(p)
-    const_gauss_odds = math.log(0.95/0.01)
-    logit_posterior = logit + const_gauss_odds
-    exp = (np.exp(-logit_posterior))
-    posterior_probability = 1/(1 + exp)
-    if posterior_probability <= 0.2:
-        posterior_probability = 0.2
-    elif posterior_probability >= 0.8:
-        posterior_probability = 0.8
-    return posterior_probability
+def calculate_logit_for_occupied_cell(prior):
+    logit_posterior = 1.386 + prior
+    return  logit_posterior
 
-def calculate_probability_for_free_cell(prior):
-    p = prior/(1-prior)
-    logit = np.log(p)
-    const_log_odds = -20
-    logit_posterior = logit + const_log_odds
-    exp = (np.exp(-logit_posterior))
-    posterior_probability = 1/(1 + exp)
-    if posterior_probability <= 0.2:
-        posterior_probability = 0.2
-    elif posterior_probability >= 0.8:
-        posterior_probability = 0.8
-    return posterior_probability
+def calculate_logit_for_free_cell(prior):
+    logit_posterior = -0.8473 + prior
+    return  logit_posterior
 
 class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
@@ -99,19 +84,21 @@ class Mapper:
             if result is not None:
                 gx, gy = result
                 
-                current_probability = self.map[gx, gy].get_value()
-                probability = calculate_probability_for_occupied_cell(current_probability)
-                self.map[gx, gy].set_value(probability)
-                #calculcate and update probablity occupied cell
+                prior = self.map[gx, gy].get_value()
+                l = calculate_logit_for_occupied_cell(prior)
+                if l is not None:
+                    self.map[gx, gy].set_value(l)
+                    #calculcate and update probablity occupied cell
                 
-                for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
-                    map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
-                    if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
+                    for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
+                        map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+                        if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
 
-                        current_probability = self.map[map_point[0], map_point[1]].get_value()
-                        probability = calculate_probability_for_free_cell(current_probability)
-                        self.map[map_point[0], map_point[1]].set_value(probability)
-                        #calculate and update probability for empty cell
+                            prior= self.map[map_point[0], map_point[1]].get_value()
+                            logit = calculate_logit_for_free_cell(prior)
+                            self.map[map_point[0], map_point[1]].set_value(logit)
+                            #calculate and update probability for empty cell
+
 
 
     def get_marker(self, x, y, color):
@@ -153,7 +140,11 @@ class Mapper:
         msg.info.origin.orientation.w = self.origin_orientation[3]
         msg.info.map_load_time = rospy.Time.now()
         for idx, value in np.ndenumerate(self.map):
-            msg.data.append(int(value.get_value() * 100))
+            if np.isnan(value.get_probability()):
+                xy_value = 0
+            else:
+                xy_value = int(value.get_probability() * 100) 
+            msg.data.append(xy_value)
         return msg
 
     def position_callback(self, data):
