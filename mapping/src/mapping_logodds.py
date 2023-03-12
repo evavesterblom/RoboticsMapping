@@ -36,11 +36,11 @@ def get_point_location(position, heading, angle, distance): #lidar (0.24, 0, 0.3
     return x, y
 
 def calculate_logit_for_occupied_cell(prior):
-    logit_posterior = 1.386 + prior
+    logit_posterior = 1.386 + prior #log(0.8/1-0.8) -> probability of reading of cell being occupied
     return  logit_posterior
 
 def calculate_logit_for_free_cell(prior):
-    logit_posterior = -0.8473 + prior
+    logit_posterior = -0.8473 + prior #log(0.3/0.7) -> probability of cell being not occupied as the ray traverses this cell
     return  logit_posterior
 
 class Mapper:
