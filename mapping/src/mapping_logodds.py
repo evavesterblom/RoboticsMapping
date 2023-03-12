@@ -35,19 +35,27 @@ def get_point_location(position, heading, angle, distance): #lidar (0.24, 0, 0.3
 def calculate_probability_for_occupied_cell(prior):
     p = prior/(1-prior)
     logit = np.log(p)
-    const_gauss_odds = 4.5538768916 #ln(0.95/0.01)
+    const_gauss_odds = math.log(0.95/0.01)
     logit_posterior = logit + const_gauss_odds
     exp = (np.exp(-logit_posterior))
     posterior_probability = 1/(1 + exp)
+    if posterior_probability <= 0.2:
+        posterior_probability = 0.2
+    elif posterior_probability >= 0.8:
+        posterior_probability = 0.8
     return posterior_probability
 
 def calculate_probability_for_free_cell(prior):
     p = prior/(1-prior)
     logit = np.log(p)
-    const_log_odds = -100
+    const_log_odds = -20
     logit_posterior = logit + const_log_odds
     exp = (np.exp(-logit_posterior))
     posterior_probability = 1/(1 + exp)
+    if posterior_probability <= 0.2:
+        posterior_probability = 0.2
+    elif posterior_probability >= 0.8:
+        posterior_probability = 0.8
     return posterior_probability
 
 class Mapper:
@@ -77,7 +85,7 @@ class Mapper:
         local_position = self.position
         local_heading = self.heading
         found_points = set()
-        for i in [0]:#range(len(data.ranges)):
+        for i in range(len(data.ranges)):
             if not(data.range_min < data.ranges[i] < data.range_max):
                 continue
             x, y = get_point_location(local_position, 
@@ -93,8 +101,6 @@ class Mapper:
                 
                 current_probability = self.map[gx, gy].get_value()
                 probability = calculate_probability_for_occupied_cell(current_probability)
-                rospy.loginfo("%f", probability)
-
                 self.map[gx, gy].set_value(probability)
                 #calculcate and update probablity occupied cell
                 
