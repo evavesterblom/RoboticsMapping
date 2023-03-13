@@ -16,10 +16,10 @@ from utils.transform import world_to_grid
 from utils.math import parametric_equation
 
 class Cell:
-    def __init__(self, x, y):
+    def __init__(self, x, y, logit=0.0):
         self.x = x
         self.y = y
-        self.logit = 0.0
+        self.logit = logit
 
     def get_value(self):
         return self.logit
@@ -31,8 +31,8 @@ class Cell:
         return 1 / (1 + np.exp(-self.logit))
 
 def get_point_location(position, heading, angle, distance):  # lidar (0.24, 0, 0.3)
-    x = position[0] + distance * math.cos(heading + angle) + 0.24
-    y = position[1] + distance * math.sin(heading + angle)
+    x = position[0] + (distance * math.cos(heading + angle)) + 0.24*math.cos(heading)
+    y = position[1] + (distance * math.sin(heading + angle)) + 0.24*math.sin(heading)
     return x, y
 
 def calculate_logit_for_occupied_cell(prior):
@@ -53,8 +53,7 @@ class Mapper:
         self.map_publisher = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
         self.lidar_publisher = rospy.Publisher('/lidar_points', MarkerArray, queue_size=10)
         self.lidar = MarkerArray()
-        self.map = np.array(
-            [[Cell(x, y) for x in range(int(width / resolution))] for y in range(int(height / resolution))], Cell)
+        self.map = np.array([[Cell(x, y) for x in range(int(width / resolution))] for y in range(int(height / resolution))])
         self.width = width
         self.height = height
         self.resolution = resolution
