@@ -28,17 +28,6 @@
     <!-- convert joint states to TF transforms for rviz, etc  -->
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-    <!-- Load parameters from yaml files into specified namespaces -->
-<!--    <rosparam command="load"-->
-<!--              file="$(find mapping)/data/config/joints.yaml"-->
-<!--              ns="controller_joints" />-->
-<!--    <rosparam command="load"-->
-<!--              file="$(find mapping)/data/config/diffdrive.yaml"-->
-<!--              ns="controller_diffdrive" />-->
-<!--    <rosparam command="load"-->
-<!--              file="$(find mapping)/data/config/mission.yaml"-->
-<!--              ns="controller_waypoints" />-->
-
     <!-- Spawn model -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-urdf -x 0 -y 0 -z 0  -model SCITOS_G5 -param robot_description"/>
@@ -50,10 +39,18 @@
 
     <!-- Launch rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos.rviz'" />
-<!--    <node pkg="mapping" type="teleop_key.py" name="teleop_key" output="screen" />-->
+    <node name="rviz_logodds" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos.rviz'" />
+    
+    <!--    
+    <node pkg="mapping" type="teleop_key.py" name="teleop_key" output="screen" />
+    -->
 
-<!--    <node pkg="mapping" type="visualizer.py" name="visualizer" output="screen" />-->
-    <node pkg="mapping" type="mapping_logodds.py" name="mapping" output="screen" />
+    <!--    
+    <node pkg="mapping" type="visualizer.py" name="visualizer" output="screen" />
+    <node pkg="mapping" type="mapping.py" name="mapping" output="screen" />
+    -->
+    <node pkg="mapping" type="mapping_logodds.py" name="mapping_logodds" output="screen" />
+
 
 
 

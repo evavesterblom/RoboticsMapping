@@ -15,7 +15,6 @@ import numpy as np
 from utils.transform import world_to_grid
 from utils.math import parametric_equation
 
-
 class Cell:
     def __init__(self, x, y):
         self.x = x
@@ -31,22 +30,18 @@ class Cell:
     def get_probability(self):
         return 1 / (1 + np.exp(-self.logit))
 
-
 def get_point_location(position, heading, angle, distance):  # lidar (0.24, 0, 0.3)
     x = position[0] + distance * math.cos(heading + angle) + 0.24
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
 
-
 def calculate_logit_for_occupied_cell(prior):
     logit_posterior = 1.386 + prior  # log(0.8/1-0.8) -> probability of reading of cell being occupied
     return logit_posterior
 
-
 def calculate_logit_for_free_cell(prior):
     logit_posterior = -0.8473 + prior  # log(0.3/0.7) -> probability of cell being not occupied as the ray traverses this cell
     return logit_posterior
-
 
 class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
@@ -90,12 +85,10 @@ class Mapper:
             result = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
             if result is not None:
                 gx, gy = result
-
                 prior = self.map[gx, gy].get_value()
                 l = calculate_logit_for_occupied_cell(prior)
                 if l is not None:
-                    self.map[gx, gy].set_value(l)
-                    # calculcate and update probablity occupied cell
+                    self.map[gx, gy].set_value(l) #upd occulpied cell
 
                     for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
                         map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width,
@@ -103,8 +96,7 @@ class Mapper:
                         if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
                             prior = self.map[map_point[0], map_point[1]].get_value()
                             logit = calculate_logit_for_free_cell(prior)
-                            self.map[map_point[0], map_point[1]].set_value(logit)
-                            # calculate and update probability for empty cell
+                            self.map[map_point[0], map_point[1]].set_value(logit) #upd free cell
 
     def get_marker(self, x, y, color):
         marker = Marker()
@@ -159,9 +151,8 @@ class Mapper:
                                                                              data.pose.pose.orientation.z,
                                                                              data.pose.pose.orientation.w))[2]
 
-
 if __name__ == '__main__':
-    rospy.init_node('mapping')
+    rospy.init_node('mapping_logodds')
     mapper = Mapper(60, 60, 0.1, -30, -30)
-    rospy.loginfo("Mapping node started")
+    rospy.loginfo("Mapping node logit started")
     rospy.spin()

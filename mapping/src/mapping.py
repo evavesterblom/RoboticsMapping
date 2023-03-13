@@ -47,13 +47,11 @@ class Cell:
 
     def get_value(self):
         return self.buffer.get_average()
-
-
+    
 def get_point_location(position, heading, angle, distance): #lidar (0.24, 0, 0.3)
     x = position[0] + distance * math.cos(heading + angle) + 0.24
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
-
 
 class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
@@ -61,8 +59,8 @@ class Mapper:
         self.heading = 0
         self.laser_subscriber = rospy.Subscriber('/laser_scan', LaserScan, self.laser_callback, queue_size=1, buff_size=2**24)
         self.position_subscriber = rospy.Subscriber('/odom', Odometry, self.position_callback)
-        self.map_publisher = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
-        self.lidar_publisher = rospy.Publisher('/lidar_points', MarkerArray, queue_size=10)
+        self.map_publisher = rospy.Publisher('/map_buf', OccupancyGrid, queue_size=10)
+        self.lidar_publisher = rospy.Publisher('/lidar_points_buf', MarkerArray, queue_size=10)
         self.lidar = MarkerArray()
         self.map = np.array([[Cell(x, y) for x in range(int(width / resolution))] for y in range(int(height / resolution))], Cell)
         self.width = width
@@ -77,7 +75,6 @@ class Mapper:
         self.lidar_publisher.publish(self.lidar)
         self.map_publisher.publish(self.get_map())
 
-    # lidars measurement set as occupied, others as non-occupied if measurement is valid
     def process_map(self, data):
         self.lidar = MarkerArray()
         local_position = self.position
@@ -150,7 +147,6 @@ class Mapper:
                                                                              data.pose.pose.orientation.y,
                                                                              data.pose.pose.orientation.z,
                                                                              data.pose.pose.orientation.w))[2]
-
 if __name__ == '__main__':
     rospy.init_node('mapping')
     mapper = Mapper(60, 60, 0.1, -30, -30)
