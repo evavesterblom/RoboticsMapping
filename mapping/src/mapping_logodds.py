@@ -15,6 +15,7 @@ import numpy as np
 from utils.transform import world_to_grid
 from utils.math import parametric_equation
 
+
 class Cell:
     def __init__(self, x, y):
         self.x = x
@@ -23,42 +24,48 @@ class Cell:
 
     def get_value(self):
         return self.logit
-    
+
     def set_value(self, value):
         self.logit = value
-    
-    def get_probability(self):
-        return 1/(1 + np.exp(-(self.logit)))
 
-def get_point_location(position, heading, angle, distance): #lidar (0.24, 0, 0.3)
+    def get_probability(self):
+        return 1 / (1 + np.exp(-self.logit))
+
+
+def get_point_location(position, heading, angle, distance):  # lidar (0.24, 0, 0.3)
     x = position[0] + distance * math.cos(heading + angle) + 0.24
     y = position[1] + distance * math.sin(heading + angle)
     return x, y
 
+
 def calculate_logit_for_occupied_cell(prior):
-    logit_posterior = 1.386 + prior #log(0.8/1-0.8) -> probability of reading of cell being occupied
-    return  logit_posterior
+    logit_posterior = 1.386 + prior  # log(0.8/1-0.8) -> probability of reading of cell being occupied
+    return logit_posterior
+
 
 def calculate_logit_for_free_cell(prior):
-    logit_posterior = -0.8473 + prior #log(0.3/0.7) -> probability of cell being not occupied as the ray traverses this cell
-    return  logit_posterior
+    logit_posterior = -0.8473 + prior  # log(0.3/0.7) -> probability of cell being not occupied as the ray traverses this cell
+    return logit_posterior
+
 
 class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
         self.position = (0, 0)
         self.heading = 0
-        self.laser_subscriber = rospy.Subscriber('/laser_scan', LaserScan, self.laser_callback, queue_size=1, buff_size=2**24)
+        self.laser_subscriber = rospy.Subscriber('/laser_scan', LaserScan, self.laser_callback, queue_size=1,
+                                                 buff_size=2 ** 24)
         self.position_subscriber = rospy.Subscriber('/odom', Odometry, self.position_callback)
         self.map_publisher = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
         self.lidar_publisher = rospy.Publisher('/lidar_points', MarkerArray, queue_size=10)
         self.lidar = MarkerArray()
-        self.map = np.array([[Cell(x, y) for x in range(int(width / resolution))] for y in range(int(height / resolution))], Cell)
+        self.map = np.array(
+            [[Cell(x, y) for x in range(int(width / resolution))] for y in range(int(height / resolution))], Cell)
         self.width = width
         self.height = height
         self.resolution = resolution
         self.origin_x = origin_x
         self.origin_y = origin_y
-        self.origin_orientation = tf_conversions.transformations.quaternion_from_euler(0, math.pi, -math.pi/2)
+        self.origin_orientation = tf_conversions.transformations.quaternion_from_euler(0, math.pi, -math.pi / 2)
 
     def laser_callback(self, data):
         self.process_map(data)
@@ -71,11 +78,11 @@ class Mapper:
         local_heading = self.heading
         found_points = set()
         for i in range(len(data.ranges)):
-            if not(data.range_min < data.ranges[i] < data.range_max):
+            if not (data.range_min < data.ranges[i] < data.range_max):
                 continue
-            x, y = get_point_location(local_position, 
-                                      local_heading, 
-                                      data.angle_min + i * data.angle_increment, 
+            x, y = get_point_location(local_position,
+                                      local_heading,
+                                      data.angle_min + i * data.angle_increment,
                                       data.ranges[i])
             found_points.add((x, y))
         for x, y in found_points:
@@ -83,23 +90,21 @@ class Mapper:
             result = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
             if result is not None:
                 gx, gy = result
-                
+
                 prior = self.map[gx, gy].get_value()
                 l = calculate_logit_for_occupied_cell(prior)
                 if l is not None:
                     self.map[gx, gy].set_value(l)
-                    #calculcate and update probablity occupied cell
-                
-                    for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
-                        map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
-                        if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
+                    # calculcate and update probablity occupied cell
 
-                            prior= self.map[map_point[0], map_point[1]].get_value()
+                    for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
+                        map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width,
+                                                  self.height, self.resolution)
+                        if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
+                            prior = self.map[map_point[0], map_point[1]].get_value()
                             logit = calculate_logit_for_free_cell(prior)
                             self.map[map_point[0], map_point[1]].set_value(logit)
-                            #calculate and update probability for empty cell
-
-
+                            # calculate and update probability for empty cell
 
     def get_marker(self, x, y, color):
         marker = Marker()
@@ -143,7 +148,7 @@ class Mapper:
             if np.isnan(value.get_probability()):
                 xy_value = 0
             else:
-                xy_value = int(value.get_probability() * 100) 
+                xy_value = int(value.get_probability() * 100)
             msg.data.append(xy_value)
         return msg
 
@@ -153,6 +158,7 @@ class Mapper:
                                                                              data.pose.pose.orientation.y,
                                                                              data.pose.pose.orientation.z,
                                                                              data.pose.pose.orientation.w))[2]
+
 
 if __name__ == '__main__':
     rospy.init_node('mapping')
