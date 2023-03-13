@@ -39,8 +39,7 @@
 
     <!-- Launch rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos.rviz'" />
-    <node name="rviz_logodds" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos.rviz'" />
-    
+
     <!--    
     <node pkg="mapping" type="teleop_key.py" name="teleop_key" output="screen" />
     -->
