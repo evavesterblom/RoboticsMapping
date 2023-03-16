@@ -30,7 +30,7 @@ class Cell:
     def get_probability(self):
         return 1 / (1 + np.exp(-self.logit))
 
-def get_point_location(position, heading, angle, distance):  # lidar (0.24, 0, 0.3)
+def get_point_location(position, heading, angle, distance):
     x = position[0] + (distance * math.cos(heading + angle)) + 0.24*math.cos(heading)
     y = position[1] + (distance * math.sin(heading + angle)) + 0.24*math.sin(heading)
     return x, y
@@ -40,8 +40,17 @@ def calculate_logit_for_occupied_cell(prior):
     return logit_posterior
 
 def calculate_logit_for_free_cell(prior):
-    logit_posterior = -0.8473 + prior  # log(0.3/0.7) -> probability of cell being not occupied as the ray traverses this cell
+    logit_posterior = -1.386 + prior  # log(0.2/0.8) -> probability of cell being not occupied as the ray traverses this cell
     return logit_posterior
+
+def find_neighbors(x, y, r):
+    points = set()
+    for angle in np.arange(0, 2*np.pi, np.pi/2): #4angles
+        xf = x + r*math.sin(angle)
+        yf = y + r*math.cos(angle)
+        points.add((xf, yf))
+    return points
+
 
 class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
@@ -66,6 +75,14 @@ class Mapper:
         self.lidar_publisher.publish(self.lidar)
         self.map_publisher.publish(self.get_map())
 
+    def set_neighbors_to_occupied(self, neighbors):
+        for neighbor in neighbors:
+            p = world_to_grid(neighbor[0], neighbor[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+            if p is not None:
+                prior = self.map[p[0], p[1]].get_value()
+                l = calculate_logit_for_occupied_cell(prior)
+                self.map[p[0], p[1]].set_value(l) #upd occulpied cell
+
     def process_map(self, data):
         self.lidar = MarkerArray()
         local_position = self.position
@@ -81,22 +98,23 @@ class Mapper:
             found_points.add((x, y))
         for x, y in found_points:
             self.lidar.markers.append(self.get_marker(x, y, (1, 0, 0, 1)))
-            result = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
-            if result is not None:
-                gx, gy = result
+            reading = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+            if reading is not None:
+                gx, gy = reading
                 prior = self.map[gx, gy].get_value()
                 l = calculate_logit_for_occupied_cell(prior)
-                if l is not None:
-                    self.map[gx, gy].set_value(l) #upd occulpied cell
+                self.map[gx, gy].set_value(l) #upd occulpied cell
 
-                    for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
-                        map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width,
-                                                  self.height, self.resolution)
-                        if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
-                            prior = self.map[map_point[0], map_point[1]].get_value()
-                            logit = calculate_logit_for_free_cell(prior)
-                            self.map[map_point[0], map_point[1]].set_value(logit) #upd free cell
-
+                neighbors = find_neighbors(x, y, 0.04)
+                self.set_neighbors_to_occupied(neighbors) #upd neighbors
+                
+                for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
+                    map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+                    if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
+                        prior = self.map[map_point[0], map_point[1]].get_value()
+                        logit = calculate_logit_for_free_cell(prior)
+                        self.map[map_point[0], map_point[1]].set_value(logit) #upd free cell
+                
     def get_marker(self, x, y, color):
         marker = Marker()
         marker.header.frame_id = "odom"
