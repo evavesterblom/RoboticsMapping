@@ -45,7 +45,7 @@ def calculate_logit_for_free_cell(prior):
 
 def find_neighbors(x, y, r):
     points = set()
-    for angle in np.arange(0, 2*np.pi, np.pi/2): #4angles
+    for angle in np.arange(0, 2*np.pi, np.pi/2):
         xf = x + r*math.sin(angle)
         yf = y + r*math.cos(angle)
         points.add((xf, yf))
