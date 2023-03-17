@@ -34,6 +34,6 @@ catkin_package(
 )
 
 catkin_install_python(PROGRAMS
-  src/mapping.py scripts/teleop_key.py src/visualizer.py src/mapping_logodds.py
+    scripts/teleop_key.py src/visualizer.py src/mapping_logodds.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
