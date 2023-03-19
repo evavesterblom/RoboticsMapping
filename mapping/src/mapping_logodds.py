@@ -12,8 +12,8 @@ import tf_conversions
 import math
 import numpy as np
 
-from utils.transform import world_to_grid
-from utils.math import parametric_equation
+import utils.transform as transform
+import utils.math as math_utils
 
 class Cell:
     def __init__(self, x, y, logit=0.0):
@@ -68,16 +68,23 @@ class Mapper:
         self.resolution = resolution
         self.origin_x = origin_x
         self.origin_y = origin_y
+        self.grid_width = int(width / resolution)
+        self.grid_height = int(height / resolution)
         self.origin_orientation = tf_conversions.transformations.quaternion_from_euler(0, math.pi, -math.pi / 2)
 
+
     def laser_callback(self, data):
+        start_proces = rospy.get_time()
         self.process_map(data)
+        start_lidar = rospy.get_time()
         self.lidar_publisher.publish(self.lidar)
+        start_draw = rospy.get_time()
         self.map_publisher.publish(self.get_map())
+        rospy.loginfo(f"Processing: {start_lidar - start_proces} Lidar: {start_draw - start_lidar} Draw: {rospy.get_time() - start_draw}")
 
     def set_neighbors_to_occupied(self, neighbors):
         for neighbor in neighbors:
-            p = world_to_grid(neighbor[0], neighbor[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+            p = transform.world_to_grid(neighbor[0], neighbor[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
             if p is not None:
                 prior = self.map[p[0], p[1]].get_value()
                 l = calculate_logit_for_occupied_cell(prior)
@@ -96,9 +103,10 @@ class Mapper:
                                       data.angle_min + i * data.angle_increment,
                                       data.ranges[i])
             found_points.add((x, y))
+
         for x, y in found_points:
             self.lidar.markers.append(self.get_marker(x, y, (1, 0, 0, 1)))
-            reading = world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+            reading = transform.world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)
             if reading is not None:
                 gx, gy = reading
                 prior = self.map[gx, gy].get_value()
@@ -107,14 +115,18 @@ class Mapper:
 
                 neighbors = find_neighbors(x, y, 0.04)
                 self.set_neighbors_to_occupied(neighbors) #upd neighbors
-                
-                for point in parametric_equation((local_position[0], local_position[1]), (x, y), 100):
-                    map_point = world_to_grid(point[0], point[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)
+                # print(f"{local_position = }, Cell = {(x, y)}, resolution = {self.resolution}")
+                # print(f"Grid local position {transform.world_to_grid(local_position[0], local_position[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)}\n"
+                #       f"Cell grid postion {transform.world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)}")
+                # print(f"DDA points {math_utils.dda((local_position[0], local_position[1]), (x, y), self.resolution)}")
+                # print(f"Offset points {transform.offset_points(math_utils.dda((local_position[0], local_position[1]), (x, y), self.resolution), (self.origin_x / self.resolution, self.origin_y / self.resolution), (self.grid_width, self.grid_height))}")
+                for point in math_utils.dda((local_position[0], local_position[1]), (x, y), self.resolution):
+                    map_point = transform.offset_point(point, (int(self.origin_x / self.resolution), int(self.origin_y / self.resolution)), (self.grid_width, self.grid_height))
                     if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
                         prior = self.map[map_point[0], map_point[1]].get_value()
                         logit = calculate_logit_for_free_cell(prior)
                         self.map[map_point[0], map_point[1]].set_value(logit) #upd free cell
-                
+
     def get_marker(self, x, y, color):
         marker = Marker()
         marker.header.frame_id = "odom"

@@ -14,6 +14,17 @@ def world_to_grid(x, y, origin_x, origin_y, width, height, resolution):
     else:
         return None
 
+def offset_points(points, offset, grid_size):
+    result = []
+    for point in points:
+        result.append(offset_point(point, offset, grid_size))
+    return result
+
+def offset_point(point, offset, grid_size):
+    if point[0] + offset[0] < grid_size[0] and point[1] + offset[1] < grid_size[1]:
+        return point[0] - offset[0], point[1] - offset[1]
+    else:
+        raise Exception("Point out of bounds")
 
 def grid_to_world(gx, gy, origin_x, origin_y, width, height, resolution):
     x = gx * resolution + origin_x
