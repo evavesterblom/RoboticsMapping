@@ -36,11 +36,11 @@ def get_point_location(position, heading, angle, distance):
     return x, y
 
 def calculate_logit_for_occupied_cell(prior):
-    logit_posterior = 1.386 + prior  # log(0.8/1-0.8) -> probability of reading of cell being occupied
+    logit_posterior = 1.386 + prior
     return logit_posterior
 
 def calculate_logit_for_free_cell(prior):
-    logit_posterior = -1.386 + prior  # log(0.2/0.8) -> probability of cell being not occupied as the ray traverses this cell
+    logit_posterior = -1.386 + prior
     return logit_posterior
 
 def find_neighbors(x, y, r):
@@ -115,11 +115,7 @@ class Mapper:
 
                 neighbors = find_neighbors(x, y, 0.04)
                 self.set_neighbors_to_occupied(neighbors) #upd neighbors
-                # print(f"{local_position = }, Cell = {(x, y)}, resolution = {self.resolution}")
-                # print(f"Grid local position {transform.world_to_grid(local_position[0], local_position[1], self.origin_x, self.origin_y, self.width, self.height, self.resolution)}\n"
-                #       f"Cell grid postion {transform.world_to_grid(x, y, self.origin_x, self.origin_y, self.width, self.height, self.resolution)}")
-                # print(f"DDA points {math_utils.dda((local_position[0], local_position[1]), (x, y), self.resolution)}")
-                # print(f"Offset points {transform.offset_points(math_utils.dda((local_position[0], local_position[1]), (x, y), self.resolution), (self.origin_x / self.resolution, self.origin_y / self.resolution), (self.grid_width, self.grid_height))}")
+                
                 for point in math_utils.dda((local_position[0], local_position[1]), (x, y), self.resolution):
                     map_point = transform.offset_point(point, (int(self.origin_x / self.resolution), int(self.origin_y / self.resolution)), (self.grid_width, self.grid_height))
                     if map_point is not None and map_point != (gx, gy) and map_point not in found_points:
