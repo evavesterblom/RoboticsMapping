@@ -1,14 +1,15 @@
 <?xml version="1.0"?>
 <launch>
-    <env name="GAZEBO_MODEL_PATH" value="$(find mapping)/data:$(optenv GAZEBO_MODEL_PATH)"/>
+
+    <!-- <env name="GAZEBO_MODEL_PATH" value="$(find mapping)/data:$(optenv GAZEBO_MODEL_PATH)"/>
 
     <arg name="paused" default="false"/>
     <arg name="use_sim_time" default="true"/>
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
-    <arg name="debug" default="false"/>
+    <arg name="debug" default="false"/> -->
 
-    <!-- Load gazebo with an empty world -->
+    <!-- Load gazebo with an empty world 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find mapping)/data/worlds/test_world.sdf"/>
         <arg name="paused" value="$(arg paused)" />
@@ -17,6 +18,7 @@
         <arg name="headless" default="$(arg headless)" />
         <arg name="debug" value="$(arg debug)" />
     </include>
+        -->
 
 
     <!-- Load the URDF into ROS parameter server -->
@@ -28,14 +30,16 @@
     <!-- convert joint states to TF transforms for rviz, etc  -->
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-    <!-- Spawn model -->
+    <!-- Spawn model 
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-urdf -x 0 -y 0 -z 0  -model SCITOS_G5 -param robot_description"/>
+          -->
 
-    <!-- Spawn the controllers -->
+    <!-- Spawn the controllers 
     <node name="controller_spawner" pkg="controller_manager" type="spawner"
           args="controller_joints
           controller_diffdrive" />
+          -->
 
     <!-- Launch rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos.rviz'" />
@@ -49,6 +53,11 @@
     <node pkg="mapping" type="mapping.py" name="mapping" output="screen" />
     -->
     <node pkg="mapping" type="mapping_logodds.py" name="mapping_logodds" output="screen" />
+
+    <!-- <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 0 camera_link base_link 100" /> -->
+    <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 map odom" />
+
+
 
 
 

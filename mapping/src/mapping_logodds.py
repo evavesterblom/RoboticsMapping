@@ -56,9 +56,8 @@ class Mapper:
     def __init__(self, width, height, resolution, origin_x, origin_y):
         self.position = (0, 0)
         self.heading = 0
-        self.laser_subscriber = rospy.Subscriber('/laser_scan', LaserScan, self.laser_callback, queue_size=1,
-                                                 buff_size=2 ** 24)
-        self.position_subscriber = rospy.Subscriber('/odom', Odometry, self.position_callback)
+        self.laser_subscriber = rospy.Subscriber('/laser', LaserScan, self.laser_callback, queue_size=1, buff_size=2 ** 24) #laser_scan on sim 
+        self.position_subscriber = rospy.Subscriber('/odometry', Odometry, self.position_callback) #odom on sim
         self.map_publisher = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
         self.lidar_publisher = rospy.Publisher('/lidar_points', MarkerArray, queue_size=10)
         self.lidar = MarkerArray()
@@ -74,6 +73,7 @@ class Mapper:
 
 
     def laser_callback(self, data):
+        rospy.loginfo(f"Laser info received")
         start_proces = rospy.get_time()
         self.process_map(data)
         start_lidar = rospy.get_time()
