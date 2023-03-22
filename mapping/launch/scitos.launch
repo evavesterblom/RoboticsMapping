@@ -43,6 +43,7 @@
 
     <!-- Launch rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos.rviz'" />
+        <node name="rviz2" pkg="rviz" type="rviz" args="--display-config '$(find mapping)/data/config/rviz/scitos_our.rviz'" />
 
     <!--    
     <node pkg="mapping" type="teleop_key.py" name="teleop_key" output="screen" />
