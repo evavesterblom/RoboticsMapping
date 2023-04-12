@@ -17,7 +17,7 @@ Tasks are divided into
 
 In the tex folder
 Ongoing summary:
-https://github.com/evavesterblom/RoboticsMapping/blob/main/tex/w6.pdf
+https://github.com/evavesterblom/RoboticsMapping/blob/main/tex/w9.pdf
 
 **Videos**
 * Occupancy grid creation - https://youtu.be/s0qFAl7SZXA
